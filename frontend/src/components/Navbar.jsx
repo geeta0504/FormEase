@@ -1,4 +1,6 @@
 import { Link, useLocation, useNavigate } from "react-router";
+import { LogOut, ShieldCheck } from "lucide-react";
+import nitGoaLogo from "../assets/nit-goa-logo.png";
 
 function Navbar() {
   const location = useLocation();
@@ -18,27 +20,38 @@ function Navbar() {
   };
 
   return (
-    <div className="sticky top-0 z-50 bg-neutral text-neutral-content border-b-4 border-primary shadow-md">
+    <div className="sticky top-0 z-50 bg-neutral/95 backdrop-blur-md text-neutral-content shadow-lg">
+      {/* thin gradient accent line instead of a flat border */}
+      <div className="h-[3px] w-full bg-gradient-to-r from-primary via-secondary to-primary" />
+
       <div className="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
-        <Link to={isAdminArea ? "/admin" : "/"} className="flex items-center gap-3">
-          <span className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-primary font-display text-sm">
-            NIT
-          </span>
+        <Link to={isAdminArea ? "/admin" : "/"} className="flex items-center gap-3 group">
+          <div className="relative">
+            <img
+              src={nitGoaLogo}
+              alt="NIT Goa"
+              className="w-11 h-11 object-contain drop-shadow-md transition-transform duration-300 group-hover:scale-105"
+            />
+          </div>
           <span className="flex flex-col leading-tight">
-            <span className="font-display text-lg tracking-wide">NIT Goa</span>
-            <span className="text-[11px] uppercase tracking-[0.2em] text-neutral-content/60">
+            <span className="font-display text-lg tracking-wide">
+              NIT Goa
+            </span>
+            <span className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.2em] text-neutral-content/55">
+              {isAdminArea && <ShieldCheck size={11} className="text-primary" />}
               {isAdminArea ? "Admin Portal" : "Hostel Undertaking"}
             </span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-3 font-data text-xs">
+        <div className="flex items-center gap-4 font-data text-xs">
           {isAdminArea ? (
             adminToken && (
               <button
                 onClick={handleAdminLogout}
-                className="btn btn-xs btn-outline border-neutral-content/40 text-neutral-content hover:bg-primary hover:border-primary hover:text-primary-content"
+                className="btn btn-xs gap-1.5 btn-outline border-neutral-content/30 text-neutral-content/90 hover:bg-primary hover:border-primary hover:text-primary-content transition-colors"
               >
+                <LogOut size={12} />
                 Log out
               </button>
             )
@@ -47,13 +60,19 @@ function Navbar() {
               {studentToken && (
                 <button
                   onClick={handleStudentLogout}
-                  className="btn btn-xs btn-outline border-neutral-content/40 text-neutral-content hover:bg-primary hover:border-primary hover:text-primary-content"
+                  className="btn btn-xs gap-1.5 btn-outline border-neutral-content/30 text-neutral-content/90 hover:bg-primary hover:border-primary hover:text-primary-content transition-colors"
                 >
+                  <LogOut size={12} />
                   Log out
                 </button>
               )}
-              <Link to="/admin" className="opacity-50 hover:opacity-100 transition-opacity uppercase tracking-wider">
-                Staff →
+              <div className="h-4 w-px bg-neutral-content/20" />
+              <Link
+                to="/admin"
+                className="flex items-center gap-1 text-neutral-content/50 hover:text-primary transition-colors uppercase tracking-wider"
+              >
+                Staff
+                <span className="transition-transform group-hover:translate-x-0.5">→</span>
               </Link>
             </>
           )}

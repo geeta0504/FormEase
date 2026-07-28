@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
+import { User, Users, PenLine, GraduationCap, Home } from "lucide-react";
 import api from "../utils/api";
 
 function FormPage() {
@@ -8,17 +9,17 @@ function FormPage() {
   const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
-  studentName: "",
-  degree: "",
-  branch: "",
-  rollNumber: "",
-  semester: "",
-  hostel: "",
-  roomNumber: "",
-  parentName: "",
-  parentAddressLine1: "",
-  parentAddressLine2: "",
-});
+    studentName: "",
+    degree: "",
+    branch: "",
+    rollNumber: "",
+    semester: "",
+    hostel: "",
+    roomNumber: "",
+    parentName: "",
+    parentAddressLine1: "",
+    parentAddressLine2: "",
+  });
 
   const [studentSignature, setStudentSignature] = useState(null);
   const [parentSignature, setParentSignature] = useState(null);
@@ -56,72 +57,101 @@ function FormPage() {
   };
 
   return (
-    <div className="min-h-screen bg-base-200 py-10 px-4">
-      <div className="card w-full max-w-2xl mx-auto bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title justify-center mb-4">
-            Undertaking for Room Allotment
-          </h2>
+    <div className="min-h-screen bg-base-200 pb-28">
+      {/* header banner */}
+      <div className="bg-neutral text-neutral-content py-10 px-4 mb-8">
+        <div className="max-w-2xl mx-auto">
+          <p className="text-xs uppercase tracking-[0.25em] text-neutral-content/60 mb-2">
+            New Joinee
+          </p>
+          <h1 className="font-display text-3xl">Undertaking for Room Allotment</h1>
+          <p className="text-sm text-neutral-content/70 mt-2">
+            Complete all sections below and upload both signatures to submit your declaration.
+          </p>
+        </div>
+      </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Student Name" name="studentName" value={formData.studentName} onChange={handleChange} />
-              <Field label="Degree" name="degree" value={formData.degree} onChange={handleChange} />
-              <Field label="Branch" name="branch" value={formData.branch} onChange={handleChange} />
-              <Field label="Roll Number" name="rollNumber" value={formData.rollNumber} onChange={handleChange} />
-              <Field label="Semester" name="semester" value={formData.semester} onChange={handleChange} />
-              <Field label="Hostel" name="hostel" value={formData.hostel} onChange={handleChange} />
-              <Field label="Room Number" name="roomNumber" value={formData.roomNumber} onChange={handleChange} />
-              
-            </div>
+      <form onSubmit={handleSubmit} className="max-w-2xl mx-auto px-4 flex flex-col gap-6">
+        <Section icon={<GraduationCap size={18} />} title="Academic Details">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Student Name" name="studentName" value={formData.studentName} onChange={handleChange} span2 />
+            <Field label="Degree" name="degree" value={formData.degree} onChange={handleChange} />
+            <Field label="Branch" name="branch" value={formData.branch} onChange={handleChange} />
+            <Field label="Roll Number" name="rollNumber" value={formData.rollNumber} onChange={handleChange} />
+            <Field label="Semester" name="semester" value={formData.semester} onChange={handleChange} />
+          </div>
+        </Section>
 
-            <div className="divider">Parent / Guardian Details</div>
+        <Section icon={<Home size={18} />} title="Hostel Details">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Hostel" name="hostel" value={formData.hostel} onChange={handleChange} />
+            <Field label="Room Number" name="roomNumber" value={formData.roomNumber} onChange={handleChange} />
+          </div>
+        </Section>
 
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Parent Name" name="parentName" value={formData.parentName} onChange={handleChange} />
-              
-              <Field label="Address Line 1" name="parentAddressLine1" value={formData.parentAddressLine1} onChange={handleChange} />
-              <Field label="Address Line 2" name="parentAddressLine2" value={formData.parentAddressLine2} onChange={handleChange} />
-              
-            </div>
+        <Section icon={<Users size={18} />} title="Parent / Guardian Details">
+          <div className="grid grid-cols-2 gap-4">
+            <Field label="Parent Name" name="parentName" value={formData.parentName} onChange={handleChange} span2 />
+            <Field label="Address Line 1" name="parentAddressLine1" value={formData.parentAddressLine1} onChange={handleChange} span2 />
+            <Field label="Address Line 2" name="parentAddressLine2" value={formData.parentAddressLine2} onChange={handleChange} span2 />
+          </div>
+        </Section>
 
-            <div className="divider">Signatures</div>
+        <Section icon={<PenLine size={18} />} title="Signatures">
+          <p className="text-xs opacity-60 -mt-2 mb-2">
+            Upload a clear photo or scan of each signature — a plain white background works best.
+          </p>
+          <div className="grid grid-cols-2 gap-4">
+            <SignatureUpload
+              label="Student Signature"
+              file={studentSignature}
+              onChange={setStudentSignature}
+            />
+            <SignatureUpload
+              label="Parent Signature"
+              file={parentSignature}
+              onChange={setParentSignature}
+            />
+          </div>
+        </Section>
+      </form>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div className="form-control">
-                <label className="label"><span className="label-text">Student Signature</span></label>
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg"
-                  className="file-input file-input-bordered w-full"
-                  onChange={(e) => setStudentSignature(e.target.files[0])}
-                />
-              </div>
-              <div className="form-control">
-                <label className="label"><span className="label-text">Parent Signature</span></label>
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg"
-                  className="file-input file-input-bordered w-full"
-                  onChange={(e) => setParentSignature(e.target.files[0])}
-                />
-              </div>
-            </div>
-
-            <button type="submit" className="btn btn-primary w-full mt-4" disabled={loading}>
-              {loading ? <span className="loading loading-spinner"></span> : "Submit"}
-            </button>
-          </form>
+      {/* floating submit bar */}
+      <div className="fixed bottom-0 left-0 right-0 bg-base-100 border-t border-base-300 shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+        <div className="max-w-2xl mx-auto px-4 py-3">
+          <button
+            type="submit"
+            form=""
+            onClick={handleSubmit}
+            className="btn btn-primary w-full rounded-full"
+            disabled={loading}
+          >
+            {loading ? <span className="loading loading-spinner"></span> : "Submit Undertaking"}
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function Field({ label, name, value, onChange, type = "text" }) {
+function Section({ icon, title, children }) {
   return (
-    <div className="form-control">
-      <label className="label"><span className="label-text">{label}</span></label>
+    <div className="bg-base-100 rounded-2xl shadow-sm border border-base-300 p-5">
+      <div className="flex items-center gap-2 mb-4 text-primary">
+        {icon}
+        <h3 className="font-display text-base text-base-content">{title}</h3>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function Field({ label, name, value, onChange, type = "text", span2 = false }) {
+  return (
+    <div className={`form-control ${span2 ? "col-span-2" : ""}`}>
+      <label className="label py-1">
+        <span className="label-text text-xs uppercase tracking-wide opacity-60">{label}</span>
+      </label>
       <input
         type={type}
         name={name}
@@ -129,6 +159,32 @@ function Field({ label, name, value, onChange, type = "text" }) {
         onChange={onChange}
         className="input input-bordered w-full"
       />
+    </div>
+  );
+}
+
+function SignatureUpload({ label, file, onChange }) {
+  return (
+    <div className="form-control">
+      <label className="label py-1">
+        <span className="label-text text-xs uppercase tracking-wide opacity-60">{label}</span>
+      </label>
+      <label className="flex flex-col items-center justify-center gap-1 border-2 border-dashed border-base-300 rounded-xl h-24 cursor-pointer hover:border-primary hover:bg-primary/5 transition-colors overflow-hidden">
+        {file ? (
+          <img src={URL.createObjectURL(file)} alt={label} className="h-full object-contain" />
+        ) : (
+          <>
+            <User size={20} className="opacity-40" />
+            <span className="text-xs opacity-50">Click to upload</span>
+          </>
+        )}
+        <input
+          type="file"
+          accept="image/png, image/jpeg"
+          className="hidden"
+          onChange={(e) => onChange(e.target.files[0])}
+        />
+      </label>
     </div>
   );
 }
