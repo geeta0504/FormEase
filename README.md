@@ -6,20 +6,20 @@ A full-stack MERN application that digitizes the NIT Goa "Undertaking for Room A
 
 ## Features
 
-- **Dual-phone OTP authentication** — both student and parent numbers are independently verified via OTP before login succeeds
+- **Dual-email OTP authentication** — both student and parent emails are independently verified via OTP before login succeeds
 - **Automatic new-joinee / returning-user routing** — no manual "new or old" choice; the backend decides based on existing records
 - **Digital form with signature upload** — both student and parent signatures required
 - **Pixel-accurate PDF generation** — recreates the original form's exact layout, header, tables, and declaration text, with signatures embedded (dark/photo backgrounds are automatically cleaned)
 - **Versioning** — one submission per student phone; every correction creates a new version (`original` → `update1` → `update2` ...) instead of overwriting, with full history preserved
-- **Phone number recovery** — if a number changes, verify via whichever number (student or parent) still works, then update and re-verify the new one
-- **Admin dashboard** — separate username/password login; view, filter (name/phone/roll number/branch/semester), and download any version's PDF
-- **International phone support** — numbers are normalized to E.164 format regardless of input format
+- **Email recovery** — if an email changes, verify via whichever address (student or parent) still works, then update and re-verify the new one
+- **Admin dashboard** — separate username/password login; view, filter (name/email/roll number/branch/semester), and download any version's PDF
+- **Mobile numbers on form** — student and parent mobile numbers are collected on the undertaking form for the generated PDF
 
 ---
 
 ## Tech Stack
 
-**Backend:** Node.js, Express, MongoDB (Mongoose), Upstash Redis (OTP storage + rate limiting), JWT, Multer, pdf-lib, sharp, bcryptjs
+**Backend:** Node.js, Express, MongoDB (Mongoose), Upstash Redis (OTP storage + rate limiting), JWT, Multer, pdf-lib, sharp, bcryptjs, nodemailer
 
 **Frontend:** React (Vite), React Router, Tailwind CSS + daisyUI, Axios, react-hot-toast
 
@@ -36,7 +36,7 @@ FromEase/
 │   │   ├── middleware/      # JWT auth guards, file upload handling
 │   │   ├── models/          # Mongoose schemas (Submission, Admin)
 │   │   ├── routes/          # Express route definitions
-│   │   ├── utils/           # PDF generation, phone normalization, text utils
+│   │   ├── utils/           # PDF generation, email OTP, text utils
 │   │   ├── assets/          # Logo used in generated PDFs
 │   │   └── server.js
 │   ├── uploads/              # Generated PDFs (gitignored — created at runtime)
@@ -79,6 +79,13 @@ PORT=5001
 UPSTASH_REDIS_REST_URL=your_upstash_redis_rest_url
 UPSTASH_REDIS_REST_TOKEN=your_upstash_redis_rest_token
 JWT_SECRET=a_long_random_secret_string
+
+# Optional — for real email delivery (OTPs print to the backend terminal if omitted)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=your_smtp_user
+SMTP_PASS=your_smtp_password
+SMTP_FROM=noreply@example.com
 ```
 
 > **Ask a teammate for the real values** — these are never committed to git for security reasons.
@@ -106,9 +113,9 @@ App runs on `http://localhost:5173`.
 
 ## Usage
 
-- **Student login:** `http://localhost:5173/` — enter both phone numbers, verify OTP (during development, OTPs print to the backend terminal instead of sending real SMS)
+- **Student login:** `http://localhost:5173/` — enter both email addresses, verify OTP (during development, OTPs print to the backend terminal if SMTP is not configured)
 - **Admin login:** `http://localhost:5173/admin` — use the credentials created by `createAdmin.js`
-- **Number recovery:** `http://localhost:5173/recovery` — for when a student's or parent's phone number has changed
+- **Email recovery:** `http://localhost:5173/recovery` — for when a student's or parent's email address has changed
 
 ---
 
@@ -116,5 +123,5 @@ App runs on `http://localhost:5173`.
 
 - Never commit `.env`, `node_modules`, or the `backend/uploads/` folder — all are gitignored
 - The PDF generator (`backend/src/utils/pdfGenerator.js`) recreates the form entirely in code (no external template file) — coordinates are tuned to match the original scanned form
-- SMS sending is currently stubbed to `console.log` in `authController.js` / `recoveryController.js` — swap in a real provider (Twilio, MSG91, Fast2SMS) before production use
+- OTP emails are sent via nodemailer when SMTP env vars are set; otherwise they are logged to the backend console (`utils/emailUtils.js`)
 - All form text is stored and rendered in uppercase automatically (`utils/textUtils.js`)

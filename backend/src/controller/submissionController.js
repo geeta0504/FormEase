@@ -3,12 +3,12 @@ import { generateSubmissionPdf } from "../utils/pdfGenerator.js";
 import fs from "fs";
 import path from "path";
 import { uppercaseFields } from "../utils/textUtils.js";
+import { emailToPathSlug } from "../utils/emailUtils.js";
 
-// GET /api/submissions/me  (already exists from Step 7)
 export const getMySubmission = async (req, res) => {
   try {
-    const { studentPhone } = req.student;
-    const submission = await Submission.findOne({ studentPhone });
+    const { studentEmail } = req.student;
+    const submission = await Submission.findOne({ studentEmail });
 
     if (!submission) {
       return res.status(200).json({ isNewJoinee: true, submission: null });
@@ -21,87 +21,24 @@ export const getMySubmission = async (req, res) => {
   }
 };
 
-// POST /api/submissions  (New Joinee form submit)
 export const createSubmission = async (req, res) => {
   try {
-    const { studentPhone, parentPhone } = req.student;
+    const { studentEmail, parentEmail } = req.student;
 
-    const existing = await Submission.findOne({ studentPhone });
+    const existing = await Submission.findOne({ studentEmail });
     if (existing) {
       return res.status(409).json({
-        message: "A submission already exists for this phone number. Use the update/correction flow instead.",
+        message: "A submission already exists for this email. Use the update/correction flow instead.",
       });
     }
 
     const {
       studentName, degree, branch, rollNumber, semester,
-      hostel, roomNumber, parentName, parentAddressLine1, parentAddressLine2,
+      hostel, roomNumber, studentMobile, parentName,
+      parentAddressLine1, parentAddressLine2, parentMobile,
     } = req.body;
 
-    if (!studentName || !rollNumber) {
-      return res.status(400).json({ message: "Required fields are missing" });
-    }
-
-    const studentSignatureFile = req.files?.studentSignature?.[0];
-    const parentSignatureFile = req.files?.parentSignature?.[0];
-
-    if (!studentSignatureFile || !parentSignatureFile) {
-      return res.status(400).json({ message: "Both student and parent signature images are required" });
-    }
-
-    const today = new Date().toLocaleDateString("en-GB"); // dd/mm/yyyy
-
-    const data = uppercaseFields({
-      studentName, degree, branch, rollNumber, semester,
-      hostel, roomNumber,
-      studentMobile: studentPhone,
-      studentDate: today,
-      parentName, parentAddressLine1, parentAddressLine2,
-      parentMobile: parentPhone,
-      parentDate: today,
-    });
-    const pdfBuffer = await generateSubmissionPdf(
-      data,
-      studentSignatureFile.buffer,
-      parentSignatureFile.buffer
-    );
-
-    const studentDir = path.join("uploads", "pdfs", studentPhone);
-    fs.mkdirSync(studentDir, { recursive: true });
-    const pdfPath = path.join(studentDir, "name_declaration.pdf");
-    fs.writeFileSync(pdfPath, pdfBuffer);
-
-    const submission = await Submission.create({
-      studentPhone,
-      parentPhone,
-      versions: [{ versionLabel: "original", data, pdfPath, submittedAt: new Date() }],
-    });
-
-    res.status(201).json({ message: "Submission created successfully", submission });
-  } catch (error) {
-    console.error("Error in createSubmission:", error.message);
-    res.status(500).json({ message: "Internal server error" });
-  }
-};
-
-
-// PUT /api/submissions  (Update/Correction — creates a new version)
-export const updateSubmission = async (req, res) => {
-  try {
-    const { studentPhone, parentPhone } = req.student;
-
-    const submission = await Submission.findOne({ studentPhone });
-
-    if (!submission) {
-      return res.status(404).json({ message: "No existing submission found. Use the new joinee flow instead." });
-    }
-
-    const {
-      studentName, degree, branch, rollNumber, semester,
-      hostel, roomNumber, parentName, parentAddressLine1, parentAddressLine2,
-    } = req.body;
-
-    if (!studentName || !rollNumber) {
+    if (!studentName || !rollNumber || !studentMobile || !parentMobile) {
       return res.status(400).json({ message: "Required fields are missing" });
     }
 
@@ -117,10 +54,74 @@ export const updateSubmission = async (req, res) => {
     const data = uppercaseFields({
       studentName, degree, branch, rollNumber, semester,
       hostel, roomNumber,
-      studentMobile: studentPhone,
+      studentMobile,
       studentDate: today,
       parentName, parentAddressLine1, parentAddressLine2,
-      parentMobile: parentPhone,
+      parentMobile,
+      parentDate: today,
+    });
+    const pdfBuffer = await generateSubmissionPdf(
+      data,
+      studentSignatureFile.buffer,
+      parentSignatureFile.buffer
+    );
+
+    const emailSlug = emailToPathSlug(studentEmail);
+    const studentDir = path.join("uploads", "pdfs", emailSlug);
+    fs.mkdirSync(studentDir, { recursive: true });
+    const pdfPath = path.join(studentDir, "name_declaration.pdf");
+    fs.writeFileSync(pdfPath, pdfBuffer);
+
+    const submission = await Submission.create({
+      studentEmail,
+      parentEmail,
+      versions: [{ versionLabel: "original", data, pdfPath, submittedAt: new Date() }],
+    });
+
+    res.status(201).json({ message: "Submission created successfully", submission });
+  } catch (error) {
+    console.error("Error in createSubmission:", error.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+
+export const updateSubmission = async (req, res) => {
+  try {
+    const { studentEmail } = req.student;
+
+    const submission = await Submission.findOne({ studentEmail });
+
+    if (!submission) {
+      return res.status(404).json({ message: "No existing submission found. Use the new joinee flow instead." });
+    }
+
+    const {
+      studentName, degree, branch, rollNumber, semester,
+      hostel, roomNumber, studentMobile, parentName,
+      parentAddressLine1, parentAddressLine2, parentMobile,
+    } = req.body;
+
+    if (!studentName || !rollNumber || !studentMobile || !parentMobile) {
+      return res.status(400).json({ message: "Required fields are missing" });
+    }
+
+    const studentSignatureFile = req.files?.studentSignature?.[0];
+    const parentSignatureFile = req.files?.parentSignature?.[0];
+
+    if (!studentSignatureFile || !parentSignatureFile) {
+      return res.status(400).json({ message: "Both student and parent signature images are required" });
+    }
+
+    const today = new Date().toLocaleDateString("en-GB");
+
+    const data = uppercaseFields({
+      studentName, degree, branch, rollNumber, semester,
+      hostel, roomNumber,
+      studentMobile,
+      studentDate: today,
+      parentName, parentAddressLine1, parentAddressLine2,
+      parentMobile,
       parentDate: today,
     });
 
@@ -133,7 +134,8 @@ export const updateSubmission = async (req, res) => {
     const versionNumber = submission.versions.length;
     const versionLabel = `update${versionNumber}`;
 
-    const studentDir = path.join("uploads", "pdfs", studentPhone);
+    const emailSlug = emailToPathSlug(studentEmail);
+    const studentDir = path.join("uploads", "pdfs", emailSlug);
     fs.mkdirSync(studentDir, { recursive: true });
     const pdfPath = path.join(studentDir, `name_declaration_${versionLabel}.pdf`);
     fs.writeFileSync(pdfPath, pdfBuffer);
@@ -148,13 +150,12 @@ export const updateSubmission = async (req, res) => {
   }
 };
 
-// GET /api/submissions/:versionLabel/pdf
 export const downloadMyPdf = async (req, res) => {
   try {
-    const { studentPhone } = req.student;
+    const { studentEmail } = req.student;
     const { versionLabel } = req.params;
 
-    const submission = await Submission.findOne({ studentPhone });
+    const submission = await Submission.findOne({ studentEmail });
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });
     }

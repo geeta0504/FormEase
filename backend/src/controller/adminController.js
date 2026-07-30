@@ -37,14 +37,14 @@ export const adminLogin = async (req, res) => {
   }
 };
 
-// GET /api/admin/submissions?phone=&name=
+// GET /api/admin/submissions?email=&name=
 export const getAllSubmissions = async (req, res) => {
   try {
-    const { phone, name, rollNumber, branch, semester } = req.query;
+    const { email, name, rollNumber, branch, semester } = req.query;
 
     const filter = {};
-    if (phone) {
-      filter.studentPhone = { $regex: phone, $options: "i" };
+    if (email) {
+      filter.studentEmail = { $regex: email, $options: "i" };
     }
 
     let submissions = await Submission.find(filter).sort({ createdAt: -1 });
@@ -69,12 +69,12 @@ export const getAllSubmissions = async (req, res) => {
   }
 };
 
-// GET /api/admin/submissions/:studentPhone/:versionLabel/pdf
+// GET /api/admin/submissions/:studentEmail/:versionLabel/pdf
 export const downloadSubmissionPdf = async (req, res) => {
   try {
-    const { studentPhone, versionLabel } = req.params;
+    const { studentEmail, versionLabel } = req.params;
 
-    const submission = await Submission.findOne({ studentPhone: decodeURIComponent(studentPhone) });
+    const submission = await Submission.findOne({ studentEmail: decodeURIComponent(studentEmail) });
 
     if (!submission) {
       return res.status(404).json({ message: "Submission not found" });

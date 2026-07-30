@@ -8,17 +8,15 @@ export const protectStudent = (req, res, next) => {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const token = authHeader.split(" ")[1]; // "Bearer <token>" -> take the token part
-
+    const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // attach decoded info to req so later route handlers can use it
     req.student = {
-      studentPhone: decoded.studentPhone,
-      parentPhone: decoded.parentPhone,
+      studentEmail: decoded.studentEmail,
+      parentEmail: decoded.parentEmail,
     };
 
-    next(); // token valid, proceed to the actual route handler
+    next();
   } catch (error) {
     console.error("Error in protectStudent middleware:", error.message);
     res.status(401).json({ message: "Invalid or expired token" });

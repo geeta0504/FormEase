@@ -19,17 +19,17 @@ const versionSchema = new mongoose.Schema(
       default: Date.now,
     },
   },
-  { _id: false } // no need for a separate _id per version, versionLabel is enough
+  { _id: false }
 );
 
 const submissionSchema = new mongoose.Schema(
   {
-    studentPhone: {
+    studentEmail: {
       type: String,
       required: true,
-      unique: true, // enforces one document per student phone number
+      unique: true, // one document per student email
     },
-    parentPhone: {
+    parentEmail: {
       type: String,
       required: true,
     },

@@ -10,7 +10,7 @@ function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(null);
   const [nameFilter, setNameFilter] = useState("");
-  const [phoneFilter, setPhoneFilter] = useState("");
+  const [emailFilter, setEmailFilter] = useState("");
   const [rollNumberFilter, setRollNumberFilter] = useState("");
   const [branchFilter, setBranchFilter] = useState("");
   const [semesterFilter, setSemesterFilter] = useState("");
@@ -41,7 +41,7 @@ function AdminDashboardPage() {
     e.preventDefault();
     fetchSubmissions({
       name: nameFilter || undefined,
-      phone: phoneFilter || undefined,
+      email: emailFilter || undefined,
       rollNumber: rollNumberFilter || undefined,
       branch: branchFilter || undefined,
       semester: semesterFilter || undefined,
@@ -49,17 +49,17 @@ function AdminDashboardPage() {
   };
 
   const handleClear = () => {
-    setNameFilter(""); setPhoneFilter(""); setRollNumberFilter("");
+    setNameFilter(""); setEmailFilter(""); setRollNumberFilter("");
     setBranchFilter(""); setSemesterFilter("");
     fetchSubmissions();
   };
 
-  const hasActiveFilters = nameFilter || phoneFilter || rollNumberFilter || branchFilter || semesterFilter;
+  const hasActiveFilters = nameFilter || emailFilter || rollNumberFilter || branchFilter || semesterFilter;
 
-  const handleDownload = async (studentPhone, versionLabel, studentName) => {
+  const handleDownload = async (studentEmail, versionLabel, studentName) => {
     try {
       const res = await adminApi.get(
-        `/admin/submissions/${encodeURIComponent(studentPhone)}/${versionLabel}/pdf`,
+        `/admin/submissions/${encodeURIComponent(studentEmail)}/${versionLabel}/pdf`,
         { responseType: "blob" }
       );
       const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -101,7 +101,7 @@ function AdminDashboardPage() {
           className="bg-base-100 rounded-2xl shadow-md border border-base-300 p-4 mb-6 flex flex-wrap gap-3 items-end"
         >
           <FilterInput label="Name" value={nameFilter} onChange={setNameFilter} />
-          <FilterInput label="Phone" value={phoneFilter} onChange={setPhoneFilter} />
+          <FilterInput label="Email" value={emailFilter} onChange={setEmailFilter} />
           <FilterInput label="Roll No." value={rollNumberFilter} onChange={setRollNumberFilter} />
           <FilterInput label="Branch" value={branchFilter} onChange={setBranchFilter} />
           <FilterInput label="Semester" value={semesterFilter} onChange={setSemesterFilter} />
@@ -131,12 +131,12 @@ function AdminDashboardPage() {
           <div className="flex flex-col gap-3 pb-10">
             {submissions.map((s) => {
               const latest = s.versions[s.versions.length - 1];
-              const isExpanded = expanded === s.studentPhone;
+              const isExpanded = expanded === s.studentEmail;
               return (
-                <div key={s.studentPhone} className="bg-base-100 rounded-2xl shadow-sm border border-base-300 overflow-hidden">
+                <div key={s.studentEmail} className="bg-base-100 rounded-2xl shadow-sm border border-base-300 overflow-hidden">
                   <button
                     className="w-full flex items-center justify-between p-4 text-left hover:bg-base-200/50 transition-colors"
-                    onClick={() => setExpanded(isExpanded ? null : s.studentPhone)}
+                    onClick={() => setExpanded(isExpanded ? null : s.studentEmail)}
                   >
                     <div className="flex items-center gap-4">
                       <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-display font-semibold">
@@ -144,7 +144,7 @@ function AdminDashboardPage() {
                       </div>
                       <div>
                         <p className="font-medium">{latest.data.studentName}</p>
-                        <p className="text-xs font-data opacity-60">{s.studentPhone} · {latest.data.rollNumber}</p>
+                        <p className="text-xs font-data opacity-60">{s.studentEmail} · {latest.data.rollNumber}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
@@ -179,7 +179,7 @@ function AdminDashboardPage() {
                             </span>
                             <button
                               className="btn btn-xs btn-primary gap-1 rounded-full"
-                              onClick={() => handleDownload(s.studentPhone, v.versionLabel, v.data.studentName)}
+                              onClick={() => handleDownload(s.studentEmail, v.versionLabel, v.data.studentName)}
                             >
                               <FileText size={12} /> Download
                             </button>

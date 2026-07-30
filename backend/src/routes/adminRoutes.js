@@ -6,6 +6,6 @@ const router = express.Router();
 
 router.post("/login", adminLogin);
 router.get("/submissions", protectAdmin, getAllSubmissions);
-router.get("/submissions/:studentPhone/:versionLabel/pdf", protectAdmin, downloadSubmissionPdf);
+router.get("/submissions/:studentEmail/:versionLabel/pdf", protectAdmin, downloadSubmissionPdf);
 
 export default router;

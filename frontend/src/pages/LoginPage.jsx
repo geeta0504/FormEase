@@ -4,59 +4,31 @@ import toast from "react-hot-toast";
 import api from "../utils/api";
 import nitGoaImage from "../assets/nit-goa.jpg";
 
-// keep this list short and relevant — add more if you expect other countries
-const COUNTRY_CODES = [
-  { code: "+91", label: "🇮🇳 +91 (India)" },
-  { code: "+971", label: "🇦🇪 +971 (UAE)" },
-  { code: "+966", label: "🇸🇦 +966 (Saudi Arabia)" },
-  { code: "+974", label: "🇶🇦 +974 (Qatar)" },
-  { code: "+968", label: "🇴🇲 +968 (Oman)" },
-  { code: "+965", label: "🇰🇼 +965 (Kuwait)" },
-  { code: "+973", label: "🇧🇭 +973 (Bahrain)" },
-  { code: "+964", label: "🇮🇶 +964 (Iraq)" },
-  { code: "+98", label: "🇮🇷 +98 (Iran)" },
-  { code: "+1", label: "🇺🇸 +1 (USA)" },
-  { code: "+44", label: "🇬🇧 +44 (UK)" },
-  { code: "+65", label: "🇸🇬 +65 (Singapore)" },
-];
-
-// shared classes so every input/select on this page looks identical
 const FIELD_CLASS =
   "input input-bordered w-full bg-white/10 text-white placeholder-white/50 border-white/30 " +
   "focus:border-white/60 focus:outline-none focus:bg-white/15 transition-colors";
-const SELECT_CLASS =
-  "select select-bordered w-28 bg-white/10 text-white border-white/30 " +
-  "focus:border-white/60 focus:outline-none transition-colors";
 
 function LoginPage() {
   const navigate = useNavigate();
 
-  const [stage, setStage] = useState("enterPhones");
-  const [studentCode, setStudentCode] = useState("+91");
-  const [studentPhone, setStudentPhone] = useState("");
-  const [parentCode, setParentCode] = useState("+91");
-  const [parentPhone, setParentPhone] = useState("");
+  const [stage, setStage] = useState("enterEmails");
+  const [studentEmail, setStudentEmail] = useState("");
+  const [parentEmail, setParentEmail] = useState("");
   const [studentOtp, setStudentOtp] = useState("");
   const [parentOtp, setParentOtp] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const fullStudentPhone = `${studentCode}${studentPhone}`;
-  const fullParentPhone = `${parentCode}${parentPhone}`;
-
   const handleSendOtp = async (e) => {
     e.preventDefault();
-    if (!studentPhone || !parentPhone) {
-      toast.error("Please enter both phone numbers");
+    if (!studentEmail || !parentEmail) {
+      toast.error("Please enter both email addresses");
       return;
     }
 
     setLoading(true);
     try {
-      await api.post("/auth/send-otp", {
-        studentPhone: fullStudentPhone,
-        parentPhone: fullParentPhone,
-      });
-      toast.success("OTPs sent to both numbers");
+      await api.post("/auth/send-otp", { studentEmail, parentEmail });
+      toast.success("OTPs sent to both email addresses");
       setStage("enterOtps");
     } catch (error) {
       const message = error.response?.data?.message || "Failed to send OTP";
@@ -76,7 +48,7 @@ function LoginPage() {
     setLoading(true);
     try {
       const res = await api.post("/auth/verify-otp", {
-        studentPhone: fullStudentPhone,
+        studentEmail,
         studentOtp,
         parentOtp,
       });
@@ -99,10 +71,8 @@ function LoginPage() {
       className="min-h-screen flex items-center justify-center px-4 relative bg-cover bg-center bg-neutral-900"
       style={{ backgroundImage: `url(${nitGoaImage})` }}
     >
-      {/* dark overlay so the glass card and white text stay readable */}
       <div className="absolute inset-0 bg-black/50" />
 
-      {/* top-left / top-right labels, echoing the reference design */}
       <div className="absolute top-6 left-6 z-10 text-white">
         <p className="font-display text-lg tracking-wide">NIT Goa</p>
         <p className="text-xs uppercase tracking-[0.2em] text-white/70">Hostel Portal</p>
@@ -112,64 +82,37 @@ function LoginPage() {
         <p className="text-xs text-white/70">2026</p>
       </div>
 
-      {/* the glass card itself */}
       <div className="relative z-10 w-full max-w-md rounded-3xl bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl p-8">
         <h2 className="font-display text-2xl text-white text-center mb-6">
-          {stage === "enterPhones" ? "Student Login" : "Enter OTP"}
+          {stage === "enterEmails" ? "Student Login" : "Enter OTP"}
         </h2>
 
-        {stage === "enterPhones" ? (
+        {stage === "enterEmails" ? (
           <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-white/80">Student Phone Number</span>
+                <span className="label-text text-white/80">Student Email</span>
               </label>
-              <div className="flex gap-2">
-                <select
-                  className={SELECT_CLASS}
-                  value={studentCode}
-                  onChange={(e) => setStudentCode(e.target.value)}
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code} className="text-black">
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="tel"
-                  placeholder="Phone number"
-                  className={FIELD_CLASS}
-                  value={studentPhone}
-                  onChange={(e) => setStudentPhone(e.target.value.replace(/\D/g, ""))}
-                />
-              </div>
+              <input
+                type="email"
+                placeholder="student@example.com"
+                className={FIELD_CLASS}
+                value={studentEmail}
+                onChange={(e) => setStudentEmail(e.target.value)}
+              />
             </div>
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-white/80">Parent Phone Number</span>
+                <span className="label-text text-white/80">Parent Email</span>
               </label>
-              <div className="flex gap-2">
-                <select
-                  className={SELECT_CLASS}
-                  value={parentCode}
-                  onChange={(e) => setParentCode(e.target.value)}
-                >
-                  {COUNTRY_CODES.map((c) => (
-                    <option key={c.code} value={c.code} className="text-black">
-                      {c.label}
-                    </option>
-                  ))}
-                </select>
-                <input
-                  type="tel"
-                  placeholder="Phone number"
-                  className={FIELD_CLASS}
-                  value={parentPhone}
-                  onChange={(e) => setParentPhone(e.target.value.replace(/\D/g, ""))}
-                />
-              </div>
+              <input
+                type="email"
+                placeholder="parent@example.com"
+                className={FIELD_CLASS}
+                value={parentEmail}
+                onChange={(e) => setParentEmail(e.target.value)}
+              />
             </div>
 
             <button type="submit" className="btn btn-primary w-full mt-2 rounded-full" disabled={loading}>
@@ -181,14 +124,14 @@ function LoginPage() {
               className="btn btn-link btn-sm text-white/70"
               onClick={() => navigate("/recovery")}
             >
-              Changed your number? Click here
+              Changed your email? Click here
             </button>
           </form>
         ) : (
           <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-white/80">OTP sent to Student's phone</span>
+                <span className="label-text text-white/80">OTP sent to student's email</span>
               </label>
               <input
                 type="text"
@@ -203,7 +146,7 @@ function LoginPage() {
 
             <div className="form-control">
               <label className="label">
-                <span className="label-text text-white/80">OTP sent to Parent's phone</span>
+                <span className="label-text text-white/80">OTP sent to parent's email</span>
               </label>
               <input
                 type="text"
@@ -223,7 +166,7 @@ function LoginPage() {
             <button
               type="button"
               className="btn btn-ghost btn-sm text-white/70"
-              onClick={() => setStage("enterPhones")}
+              onClick={() => setStage("enterEmails")}
             >
               ← Back
             </button>

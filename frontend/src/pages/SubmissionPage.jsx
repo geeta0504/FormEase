@@ -168,9 +168,11 @@ function EditForm({ latest, onCancel, onSuccess, setEditing }) {
     semester: latest.data.semester || "",
     hostel: latest.data.hostel || "",
     roomNumber: latest.data.roomNumber || "",
+    studentMobile: latest.data.studentMobile || "",
     parentName: latest.data.parentName || "",
     parentAddressLine1: latest.data.parentAddressLine1 || "",
     parentAddressLine2: latest.data.parentAddressLine2 || "",
+    parentMobile: latest.data.parentMobile || "",
   });
   const [studentSignature, setStudentSignature] = useState(null);
   const [parentSignature, setParentSignature] = useState(null);
@@ -231,12 +233,14 @@ function EditForm({ latest, onCancel, onSuccess, setEditing }) {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Hostel" name="hostel" value={formData.hostel} onChange={handleChange} />
             <Field label="Room Number" name="roomNumber" value={formData.roomNumber} onChange={handleChange} />
+            <Field label="Student Mobile" name="studentMobile" value={formData.studentMobile} onChange={handleChange} />
           </div>
         </Section>
 
         <Section icon={<Users size={18} />} title="Parent / Guardian Details">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Parent Name" name="parentName" value={formData.parentName} onChange={handleChange} span2 />
+            <Field label="Parent Mobile" name="parentMobile" value={formData.parentMobile} onChange={handleChange} />
             <Field label="Address Line 1" name="parentAddressLine1" value={formData.parentAddressLine1} onChange={handleChange} span2 />
             <Field label="Address Line 2" name="parentAddressLine2" value={formData.parentAddressLine2} onChange={handleChange} span2 />
           </div>
