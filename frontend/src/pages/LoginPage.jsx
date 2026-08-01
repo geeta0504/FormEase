@@ -1,174 +1,139 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import api from "../utils/api";
 import nitGoaImage from "../assets/nit-goa.jpg";
 
-const FIELD_CLASS =
-  "input input-bordered w-full bg-white/10 text-white placeholder-white/50 border-white/30 " +
-  "focus:border-white/60 focus:outline-none focus:bg-white/15 transition-colors";
+const RESEND_COOLDOWN = 60; // seconds
 
 function LoginPage() {
-  const navigate = useNavigate();
-
-  const [stage, setStage] = useState("enterEmails");
   const [studentEmail, setStudentEmail] = useState("");
-  const [parentEmail, setParentEmail] = useState("");
-  const [studentOtp, setStudentOtp] = useState("");
-  const [parentOtp, setParentOtp] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef(null);
 
-  const handleSendOtp = async (e) => {
+  // Start countdown after link is sent
+  const startCountdown = () => {
+    setCountdown(RESEND_COOLDOWN);
+    timerRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timerRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => clearInterval(timerRef.current);
+  }, []);
+
+  const sendLink = async (email) => {
+    const res = await api.post("/auth/start-login", { studentEmail: email });
+    localStorage.setItem("emailForSignIn", email);
+    localStorage.setItem("loginSessionId", res.data.sessionId);
+    return res;
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!studentEmail || !parentEmail) {
-      toast.error("Please enter both email addresses");
-      return;
-    }
-
     setLoading(true);
     try {
-      await api.post("/auth/send-otp", { studentEmail, parentEmail });
-      toast.success("OTPs sent to both email addresses");
-      setStage("enterOtps");
+      await sendLink(studentEmail);
+      setSent(true);
+      startCountdown();
+      toast.success("Verification link sent! Check your inbox.");
     } catch (error) {
-      const message = error.response?.data?.message || "Failed to send OTP";
-      toast.error(message);
+      toast.error(error.response?.data?.message || "Failed to send link");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleVerifyOtp = async (e) => {
-    e.preventDefault();
-    if (!studentOtp || !parentOtp) {
-      toast.error("Please enter both OTP codes");
-      return;
-    }
-
-    setLoading(true);
+  const handleResend = async () => {
+    if (countdown > 0 || resending) return;
+    setResending(true);
     try {
-      const res = await api.post("/auth/verify-otp", {
-        studentEmail,
-        studentOtp,
-        parentOtp,
-      });
-
-      const { token, isNewJoinee } = res.data;
-      localStorage.setItem("studentToken", token);
-      toast.success("Login successful");
-
-      navigate(isNewJoinee ? "/form" : "/submission");
+      await sendLink(studentEmail);
+      startCountdown();
+      toast.success("Verification link resent! Check your inbox.");
     } catch (error) {
-      const message = error.response?.data?.message || "OTP verification failed";
-      toast.error(message);
+      toast.error(error.response?.data?.message || "Failed to resend link");
     } finally {
-      setLoading(false);
+      setResending(false);
     }
   };
 
   return (
     <div
-      className="min-h-screen flex items-center justify-center px-4 relative bg-cover bg-center bg-neutral-900"
+      className="min-h-screen flex items-center justify-center px-4 relative bg-cover bg-center"
       style={{ backgroundImage: `url(${nitGoaImage})` }}
     >
       <div className="absolute inset-0 bg-black/50" />
-
-      <div className="absolute top-6 left-6 z-10 text-white">
-        <p className="font-display text-lg tracking-wide">NIT Goa</p>
-        <p className="text-xs uppercase tracking-[0.2em] text-white/70">Hostel Portal</p>
-      </div>
-      <div className="absolute top-6 right-6 z-10 text-right text-white">
-        <p className="font-display text-lg">Room Allotment</p>
-        <p className="text-xs text-white/70">2026</p>
-      </div>
-
       <div className="relative z-10 w-full max-w-md rounded-3xl bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl p-8">
-        <h2 className="font-display text-2xl text-white text-center mb-6">
-          {stage === "enterEmails" ? "Student Login" : "Enter OTP"}
-        </h2>
+        <h2 className="font-display text-2xl text-white text-center mb-6">Student Login</h2>
 
-        {stage === "enterEmails" ? (
-          <form onSubmit={handleSendOtp} className="flex flex-col gap-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-white/80">Student Email</span>
-              </label>
-              <input
-                type="email"
-                placeholder="student@example.com"
-                className={FIELD_CLASS}
-                value={studentEmail}
-                onChange={(e) => setStudentEmail(e.target.value)}
-              />
+        {sent ? (
+          <div className="flex flex-col items-center gap-5">
+            {/* Email sent icon */}
+            <div className="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center text-3xl">
+              📧
+            </div>
+            <p className="text-white/80 text-center text-sm">
+              A verification link has been sent to{" "}
+              <span className="text-white font-semibold">{studentEmail}</span>.
+              Open it on this device to continue.
+            </p>
+
+            {/* Resend button with countdown */}
+            <div className="w-full">
+              <button
+                onClick={handleResend}
+                disabled={countdown > 0 || resending}
+                className="btn w-full rounded-full border border-white/30 bg-white/10 text-white hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {resending ? (
+                  <span className="loading loading-spinner loading-sm"></span>
+                ) : countdown > 0 ? (
+                  `Resend link in ${countdown}s`
+                ) : (
+                  "Resend Verification Link"
+                )}
+              </button>
+              {countdown > 0 && (
+                <div className="w-full bg-white/10 rounded-full h-1 mt-2 overflow-hidden">
+                  <div
+                    className="bg-primary h-1 rounded-full transition-all duration-1000"
+                    style={{ width: `${(countdown / RESEND_COOLDOWN) * 100}%` }}
+                  />
+                </div>
+              )}
             </div>
 
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-white/80">Parent Email</span>
-              </label>
-              <input
-                type="email"
-                placeholder="parent@example.com"
-                className={FIELD_CLASS}
-                value={parentEmail}
-                onChange={(e) => setParentEmail(e.target.value)}
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary w-full mt-2 rounded-full" disabled={loading}>
-              {loading ? <span className="loading loading-spinner"></span> : "Send OTP"}
-            </button>
-
+            {/* Go back option */}
             <button
-              type="button"
-              className="btn btn-link btn-sm text-white/70"
-              onClick={() => navigate("/recovery")}
+              onClick={() => { setSent(false); clearInterval(timerRef.current); setCountdown(0); }}
+              className="text-white/50 text-xs hover:text-white/80 transition-colors underline underline-offset-2"
             >
-              Changed your email? Click here
+              Use a different email
             </button>
-          </form>
+          </div>
         ) : (
-          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-4">
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-white/80">OTP sent to student's email</span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="1234"
-                maxLength={4}
-                className={FIELD_CLASS}
-                value={studentOtp}
-                onChange={(e) => setStudentOtp(e.target.value.replace(/\D/g, ""))}
-              />
-            </div>
-
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text text-white/80">OTP sent to parent's email</span>
-              </label>
-              <input
-                type="text"
-                inputMode="numeric"
-                placeholder="1234"
-                maxLength={4}
-                className={FIELD_CLASS}
-                value={parentOtp}
-                onChange={(e) => setParentOtp(e.target.value.replace(/\D/g, ""))}
-              />
-            </div>
-
-            <button type="submit" className="btn btn-primary w-full mt-2 rounded-full" disabled={loading}>
-              {loading ? <span className="loading loading-spinner"></span> : "Verify & Login"}
-            </button>
-
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm text-white/70"
-              onClick={() => setStage("enterEmails")}
-            >
-              ← Back
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <input
+              type="email"
+              placeholder="Student email"
+              className="input input-bordered w-full bg-white/10 text-white placeholder-white/50 border-white/30"
+              value={studentEmail}
+              onChange={(e) => setStudentEmail(e.target.value)}
+              required
+            />
+            <button type="submit" className="btn btn-primary w-full rounded-full" disabled={loading}>
+              {loading ? <span className="loading loading-spinner"></span> : "Send Verification Link"}
             </button>
           </form>
         )}

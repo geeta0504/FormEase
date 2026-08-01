@@ -4,6 +4,8 @@ import fs from "fs";
 import path from "path";
 import { uppercaseFields } from "../utils/textUtils.js";
 import { emailToPathSlug } from "../utils/emailUtils.js";
+import { normalizePhone } from "../utils/phoneUtils.js";
+
 
 export const getMySubmission = async (req, res) => {
   try {
@@ -42,6 +44,16 @@ export const createSubmission = async (req, res) => {
       return res.status(400).json({ message: "Required fields are missing" });
     }
 
+    const normalizedStudentMobile = normalizePhone(studentMobile);
+    const normalizedParentMobile = normalizePhone(parentMobile);
+
+    if (!normalizedStudentMobile) {
+      return res.status(400).json({ message: "Student mobile number is invalid" });
+    }
+    if (!normalizedParentMobile) {
+      return res.status(400).json({ message: "Parent mobile number is invalid" });
+    }
+
     const studentSignatureFile = req.files?.studentSignature?.[0];
     const parentSignatureFile = req.files?.parentSignature?.[0];
 
@@ -54,10 +66,10 @@ export const createSubmission = async (req, res) => {
     const data = uppercaseFields({
       studentName, degree, branch, rollNumber, semester,
       hostel, roomNumber,
-      studentMobile,
+      studentMobile: normalizedStudentMobile,
       studentDate: today,
       parentName, parentAddressLine1, parentAddressLine2,
-      parentMobile,
+      parentMobile: normalizedParentMobile,
       parentDate: today,
     });
     const pdfBuffer = await generateSubmissionPdf(
@@ -106,6 +118,16 @@ export const updateSubmission = async (req, res) => {
       return res.status(400).json({ message: "Required fields are missing" });
     }
 
+    const normalizedStudentMobile = normalizePhone(studentMobile);
+    const normalizedParentMobile = normalizePhone(parentMobile);
+
+    if (!normalizedStudentMobile) {
+      return res.status(400).json({ message: "Student mobile number is invalid" });
+    }
+    if (!normalizedParentMobile) {
+      return res.status(400).json({ message: "Parent mobile number is invalid" });
+    }
+
     const studentSignatureFile = req.files?.studentSignature?.[0];
     const parentSignatureFile = req.files?.parentSignature?.[0];
 
@@ -118,10 +140,10 @@ export const updateSubmission = async (req, res) => {
     const data = uppercaseFields({
       studentName, degree, branch, rollNumber, semester,
       hostel, roomNumber,
-      studentMobile,
+      studentMobile: normalizedStudentMobile,
       studentDate: today,
       parentName, parentAddressLine1, parentAddressLine2,
-      parentMobile,
+      parentMobile: normalizedParentMobile,
       parentDate: today,
     });
 

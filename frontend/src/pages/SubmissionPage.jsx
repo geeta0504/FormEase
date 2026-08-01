@@ -233,14 +233,14 @@ function EditForm({ latest, onCancel, onSuccess, setEditing }) {
           <div className="grid grid-cols-2 gap-4">
             <Field label="Hostel" name="hostel" value={formData.hostel} onChange={handleChange} />
             <Field label="Room Number" name="roomNumber" value={formData.roomNumber} onChange={handleChange} />
-            <Field label="Student Mobile" name="studentMobile" value={formData.studentMobile} onChange={handleChange} />
+            <Field label="Student Mobile" name="studentMobile" value={formData.studentMobile} onChange={handleChange} type="tel" />
           </div>
         </Section>
 
         <Section icon={<Users size={18} />} title="Parent / Guardian Details">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Parent Name" name="parentName" value={formData.parentName} onChange={handleChange} span2 />
-            <Field label="Parent Mobile" name="parentMobile" value={formData.parentMobile} onChange={handleChange} />
+            <Field label="Parent Mobile" name="parentMobile" value={formData.parentMobile} onChange={handleChange} type="tel" />
             <Field label="Address Line 1" name="parentAddressLine1" value={formData.parentAddressLine1} onChange={handleChange} span2 />
             <Field label="Address Line 2" name="parentAddressLine2" value={formData.parentAddressLine2} onChange={handleChange} span2 />
           </div>
@@ -268,13 +268,13 @@ function EditForm({ latest, onCancel, onSuccess, setEditing }) {
   );
 }
 
-function Field({ label, name, value, onChange, span2 = false }) {
+function Field({ label, name, value, onChange, span2 = false, type = "text" }) {
   return (
     <div className={`form-control ${span2 ? "col-span-2" : ""}`}>
       <label className="label py-1">
         <span className="label-text text-xs uppercase tracking-wide opacity-60">{label}</span>
       </label>
-      <input type="text" name={name} value={value} onChange={onChange} className="input input-bordered w-full" />
+      <input type={type} name={name} value={value} onChange={onChange} className="input input-bordered w-full" />
     </div>
   );
 }

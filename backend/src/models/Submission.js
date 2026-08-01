@@ -31,7 +31,7 @@ const submissionSchema = new mongoose.Schema(
     },
     parentEmail: {
       type: String,
-      required: true,
+      required: false,
     },
     versions: {
       type: [versionSchema],
