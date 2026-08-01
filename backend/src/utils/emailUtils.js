@@ -24,31 +24,33 @@ let transporter = null;
 let resendClient = null;
 
 async function getTransporter() {
-  if (transporter || resendClient) return { transporter, resendClient };
-
-  if (process.env.RESEND_API_KEY) {
-    resendClient = new Resend(process.env.RESEND_API_KEY);
-    return { resendClient };
+  if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    if (!transporter) {
+      transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 587,
+        secure: process.env.SMTP_SECURE === "true",
+        auth: {
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS,
+        },
+      });
+    }
+    return { transporter };
   }
 
-  if (process.env.SMTP_HOST && process.env.SMTP_USER) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === "true",
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-    });
-    return { transporter };
+  if (process.env.RESEND_API_KEY) {
+    if (!resendClient) {
+      resendClient = new Resend(process.env.RESEND_API_KEY);
+    }
+    return { resendClient };
   }
 
   return { transporter: null };
 }
 
 /**
- * Sends an OTP email. Falls back to console.log when SMTP is not configured.
+ * Sends an OTP email.
  */
 export async function sendOtpEmail(to, otp, recipientLabel) {
   const subject = "NIT Goa Hostel Portal — Your OTP";
@@ -56,9 +58,9 @@ export async function sendOtpEmail(to, otp, recipientLabel) {
 
   const { transporter: mailer, resendClient: resend } = await getTransporter();
 
-  if (resend) {
-    await resend.emails.send({
-      from: process.env.SMTP_FROM || "onboarding@resend.dev",
+  if (mailer) {
+    await mailer.sendMail({
+      from: `NIT Goa Hostel Portal <${process.env.SMTP_USER}>`,
       to,
       subject,
       text,
@@ -66,9 +68,9 @@ export async function sendOtpEmail(to, otp, recipientLabel) {
     return;
   }
 
-  if (mailer) {
-    await mailer.sendMail({
-      from: process.env.SMTP_FROM || process.env.SMTP_USER,
+  if (resend) {
+    await resend.emails.send({
+      from: process.env.SMTP_FROM || "onboarding@resend.dev",
       to,
       subject,
       text,
@@ -99,6 +101,13 @@ export async function sendVerificationLinkEmail(to, link, recipientLabel) {
   try {
     const { transporter: mailer, resendClient: resend } = await getTransporter();
 
+    if (mailer) {
+      const from = `NIT Goa Hostel Portal <${process.env.SMTP_USER}>`;
+      const info = await mailer.sendMail({ from, to, subject, text, html });
+      console.log(`[SMTP] Email dispatched to ${to} (MessageID: ${info.messageId})`);
+      return;
+    }
+
     if (resend) {
       const from = process.env.SMTP_FROM || "onboarding@resend.dev";
       const { data, error } = await resend.emails.send({ from, to, subject, html, text });
@@ -109,24 +118,38 @@ export async function sendVerificationLinkEmail(to, link, recipientLabel) {
       return;
     }
 
-    if (mailer) {
-      const from = process.env.SMTP_FROM || process.env.SMTP_USER;
-      const info = await mailer.sendMail({ from, to, subject, text, html });
-      console.log(`[SMTP] Email dispatched to ${to} (MessageID: ${info.messageId})`);
-      return;
-    }
-
     console.log(`\n======================================================`);
     console.log(`📧 [EMAIL NOT SENT TO INBOX - SMTP NOT CONFIGURED IN .ENV]`);
     console.log(`Verification link for ${to} (${recipientLabel}):`);
     console.log(`👉 ${link}`);
     console.log(`======================================================\n`);
   } catch (err) {
-    console.error(`Failed to dispatch email to ${to}:`, err.message);
+    console.error(`Failed to dispatch email via primary provider:`, err.message);
+
+    // Fallback to Resend if SMTP failed
+    if (process.env.RESEND_API_KEY) {
+      try {
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        const { data, error } = await resend.emails.send({
+          from: process.env.SMTP_FROM || "onboarding@resend.dev",
+          to,
+          subject,
+          html,
+          text,
+        });
+        if (!error) {
+          console.log(`[Resend Fallback] Email dispatched to ${to} (ID: ${data?.id})`);
+          return;
+        }
+      } catch (rErr) {
+        console.error(`Resend fallback also failed:`, rErr.message);
+      }
+    }
+
     console.log(`\n======================================================`);
-    console.log(`⚠️  [SMTP DELIVERY FAILED - NETWORK TIMEOUT OR CONFIG ERROR]`);
+    console.log(`⚠️  [EMAIL DELIVERY FAILED]`);
     console.log(`Fallback Verification Link for ${to} (${recipientLabel}):`);
     console.log(`👉 ${link}`);
     console.log(`======================================================\n`);
   }
-}
+}
