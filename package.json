@@ -1,0 +1,10 @@
+{
+  "name": "formease",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "NIT Goa Hostel Undertaking Portal",
+  "scripts": {
+    "build": "npm --prefix frontend install && npm --prefix frontend run build && npm --prefix backend install",
+    "start": "npm --prefix backend start"
+  }
+}

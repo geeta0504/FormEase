@@ -22,6 +22,7 @@
     "dotenv": "^17.4.2",
     "express": "^4.18.2",
     "firebase-admin": "^13.10.0",
+    "formease": "file:..",
     "jsonwebtoken": "^9.0.3",
     "libphonenumber-js": "^1.13.8",
     "mongoose": "^8.14.3",
