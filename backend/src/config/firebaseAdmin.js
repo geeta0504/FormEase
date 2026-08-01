@@ -1,17 +1,42 @@
 import admin from "firebase-admin";
 import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 let serviceAccount;
 
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
-  serviceAccount = typeof process.env.FIREBASE_SERVICE_ACCOUNT === "string"
-    ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-    : process.env.FIREBASE_SERVICE_ACCOUNT;
-} else if (process.env.FIREBASE_SERVICE_ACCOUNT_PATH && fs.existsSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH)) {
-  serviceAccount = JSON.parse(
-    fs.readFileSync(process.env.FIREBASE_SERVICE_ACCOUNT_PATH, "utf-8")
-  );
-} else {
+  try {
+    serviceAccount = typeof process.env.FIREBASE_SERVICE_ACCOUNT === "string"
+      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
+      : process.env.FIREBASE_SERVICE_ACCOUNT;
+  } catch (err) {
+    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable JSON:", err.message);
+  }
+}
+
+if (!serviceAccount) {
+  const possiblePaths = [
+    process.env.FIREBASE_SERVICE_ACCOUNT_PATH,
+    path.resolve(__dirname, "../../firebase-service-account.json"),
+    path.resolve(process.cwd(), "firebase-service-account.json"),
+    path.resolve(process.cwd(), "backend/firebase-service-account.json"),
+  ].filter(Boolean);
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      serviceAccount = JSON.parse(fs.readFileSync(p, "utf-8"));
+      break;
+    }
+  }
+}
+
+if (!serviceAccount) {
+  console.error("❌ CRITICAL ERROR: Firebase Service Account credentials not found!");
+  console.error("Please add 'FIREBASE_SERVICE_ACCOUNT' as an Environment Variable in Render dashboard.");
   throw new Error("Firebase Service Account credentials missing in environment variables.");
 }
 
@@ -25,4 +50,4 @@ if (!admin.apps.length) {
   });
 }
 
-export default admin;
+export default admin;
