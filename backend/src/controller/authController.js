@@ -5,8 +5,6 @@ import { normalizeEmail, sendVerificationLinkEmail } from "../utils/emailUtils.j
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-
 // STEP 1: start login — generate Firebase Email Link for STUDENT
 export const startLogin = async (req, res) => {
   try {
@@ -28,8 +26,14 @@ export const startLogin = async (req, res) => {
       { ex: 900 }
     );
 
+    // Dynamically detect frontend URL from request domain if FRONTEND_URL is missing or localhost
+    const requestFrontendUrl =
+      process.env.FRONTEND_URL && !process.env.FRONTEND_URL.includes("localhost")
+        ? process.env.FRONTEND_URL
+        : req.headers.origin || `${req.protocol}://${req.get("host")}`;
+
     const actionCodeSettings = {
-      url: `${FRONTEND_URL}/verify-email?sessionId=${sessionId}&role=student`,
+      url: `${requestFrontendUrl}/verify-email?sessionId=${sessionId}&role=student`,
       handleCodeInApp: true,
     };
 
@@ -44,12 +48,19 @@ export const startLogin = async (req, res) => {
       firebaseLink,
     });
   } catch (error) {
-    console.error("Error in startLogin:", error.message);
-    if (error.code === "auth/configuration-not-found") {
+    console.error("Error in startLogin:", error);
+
+    if (
+      error.code === "auth/configuration-not-found" ||
+      error.code === "auth/unauthorized-continue-uri" ||
+      error.code === "auth/invalid-continue-uri"
+    ) {
       return res.status(400).json({
-        message: "Firebase Email Link authentication is not enabled in Firebase Console. Please enable 'Email link (passwordless sign-in)' under Authentication -> Sign-in method in Firebase Console.",
+        message:
+          "Firebase error: Please ensure 'Email link (passwordless sign-in)' is enabled under Authentication -> Sign-in method AND your domain is added under Authentication -> Settings -> Authorized domains in Firebase Console.",
       });
     }
+
     res.status(500).json({ message: error.message || "Internal server error" });
   }
 };
