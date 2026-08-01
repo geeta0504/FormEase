@@ -9,12 +9,27 @@ const __dirname = path.dirname(__filename);
 let serviceAccount;
 
 if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  let raw = process.env.FIREBASE_SERVICE_ACCOUNT.trim();
+
+  // If base64 encoded string, decode it first
+  if (!raw.startsWith("{")) {
+    try {
+      raw = Buffer.from(raw, "base64").toString("utf-8").trim();
+    } catch (e) {
+      console.error("Failed to decode base64 FIREBASE_SERVICE_ACCOUNT:", e.message);
+    }
+  }
+
   try {
-    serviceAccount = typeof process.env.FIREBASE_SERVICE_ACCOUNT === "string"
-      ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT)
-      : process.env.FIREBASE_SERVICE_ACCOUNT;
+    serviceAccount = JSON.parse(raw);
   } catch (err) {
-    console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT environment variable JSON:", err.message);
+    try {
+      // Fix unescaped newlines that break JSON parsing when pasted into web forms
+      const sanitized = raw.replace(/\r?\n/g, "\\n");
+      serviceAccount = JSON.parse(sanitized);
+    } catch (err2) {
+      console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT JSON:", err.message);
+    }
   }
 }
 
