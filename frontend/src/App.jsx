@@ -7,9 +7,6 @@ import SubmissionPage from "./pages/SubmissionPage";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminDashboardPage from "./pages/AdminDashboardPage";
 import RecoveryPage from "./pages/RecoveryPage";
-// import VerifyEmailPage removed
-
-
 
 function App() {
   return (
@@ -23,7 +20,6 @@ function App() {
         <Route path="/recovery" element={<RecoveryPage />} />
         <Route path="/admin" element={<AdminLoginPage />} />
         <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-// <Route path="/verify-email" element={<VerifyEmailPage />} />
       </Routes>
     </BrowserRouter>
   );
