@@ -1,11 +1,10 @@
 import express from "express";
-import { startLogin, verifyLink } from "../controller/authController.js";
+import { verifyGoogle } from "../controller/authController.js";
 import { protectStudent } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/start-login", startLogin);
-router.post("/verify-link", verifyLink);
+router.post("/verify-google", verifyGoogle);
 
 router.get("/test-protected", protectStudent, (req, res) => {
   res.json({ message: "You are authenticated!", student: req.student });
