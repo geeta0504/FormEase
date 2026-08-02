@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { signInWithGoogle, getGoogleRedirectResult } from "../utils/firebase";
+import { signInWithGoogle } from "../utils/firebase";
 import api from "../utils/api";
 import nitGoaImage from "../assets/nit-goa.jpg";
 
@@ -9,38 +9,20 @@ function LoginPage() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  // Handle the result after Google redirects back to this page
-  useEffect(() => {
-    const checkRedirectResult = async () => {
-      try {
-        const result = await getGoogleRedirectResult();
-        if (!result) return; // not returning from a redirect
-        setLoading(true);
-        const idToken = await result.user.getIdToken();
-        const res = await api.post("/auth/verify-google", { idToken });
-        const { token, isNewJoinee } = res.data;
-        localStorage.setItem("studentToken", token);
-        toast.success("Login successful");
-        navigate(isNewJoinee ? "/form" : "/submission");
-      } catch (error) {
-        console.error("Google sign‑in error:", error);
-        if (error.code && error.code !== "auth/no-auth-event") {
-          toast.error(error.message || "Google sign‑in failed");
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    checkRedirectResult();
-  }, [navigate]);
-
   const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
-      await signInWithGoogle(); // navigates away to Google; result handled in useEffect above on return
+      const result = await signInWithGoogle();
+      const idToken = await result.user.getIdToken();
+      const res = await api.post("/auth/verify-google", { idToken });
+      const { token, isNewJoinee } = res.data;
+      localStorage.setItem("studentToken", token);
+      toast.success("Login successful");
+      navigate(isNewJoinee ? "/form" : "/submission");
     } catch (error) {
       console.error("Google sign‑in error:", error);
       toast.error(error.message || "Google sign‑in failed");
+    } finally {
       setLoading(false);
     }
   };
