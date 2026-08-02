@@ -17,6 +17,23 @@ const app = express();
 const PORT = process.env.PORT || 5001;
 
 app.use(cors());
+const app = express();
+const PORT = process.env.PORT || 5001;
+
+app.use(cors());
+app.use(express.json());
+
+// Add this block:
+app.use((req, res, next) => {
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  next();
+});
+
+app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
+app.use("/api/recovery", recoveryRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/submissions", submissionRoutes);
+app.use("/api/admin", adminRoutes);
 app.use(express.json());
 
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
